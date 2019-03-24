@@ -1,7 +1,12 @@
 #!/bin/sh
 
+# docker-ce installation
+yum install -y docker-ce
+systemctl enable docker-ce
+systemctl start docker
+
 # Kubernetes standalone cluster installation
-cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+cat << EOF > /etc/yum.repos.d/kubernetes.repo
 [kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
