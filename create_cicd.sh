@@ -48,7 +48,8 @@ metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
-- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy", "autoscaling", "apiextensions.k8s.io"]
+#- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy", "autoscaling", "apiextensions.k8s.io"]
+- apiGroups: ["*"]
   resources: ["*"]
   verbs: ["*"]
 EOF
@@ -87,6 +88,7 @@ done
 helm repo add gitlab https://charts.gitlab.io/
 helm repo update
 helm install gitlab/gitlab \
+  --name gitlab-$NAMESPACE \
   --timeout=600 \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
@@ -108,8 +110,9 @@ proxy:
 EOF
 kubectl create namespace jhub
 helm install jupyterhub/jupyterhub \
+  --name jupiterhub-$NAMESPACE \
   --timeout=600 \
-  --namespace jhub  \
+  --namespace $NAMESPACE \
   --tiller-namespace $NAMESPACE \
   --version=0.8.0 \
   --values config.yaml
