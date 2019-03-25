@@ -39,8 +39,6 @@ kubectl create namespace $NAMESPACE
 # mv linux-amd64/helm /usr/local/bin
 # mv linux-amd64/tiller /usr/local/bin
 curl -L https://bit.ly/install-helm | bash
-helm init
-
 # Helm tiller RBAC
 cat - << EOF > rbac-config-tiller.yaml
 apiVersion: v1
@@ -63,6 +61,14 @@ subjects:
     namespace: kube-system
 EOF
 kubectl apply -f rbac-config-tiller.yaml
+# Helm tiller service account creation
+kubectl create -f - <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiller
+EOF
+helm init --service-account=tiller
     
 # Helm nginx-ingress chart installation
 # helm install stable/nginx-ingress
