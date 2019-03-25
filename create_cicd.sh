@@ -48,7 +48,7 @@ metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
-- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy"]
+- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy", "autoscaling"]
   resources: ["*"]
   verbs: ["*"]
 EOF
