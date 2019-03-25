@@ -39,39 +39,48 @@ kubectl create namespace $NAMESPACE
 # mv linux-amd64/helm /usr/local/bin
 # mv linux-amd64/tiller /usr/local/bin
 curl -L https://bit.ly/install-helm | bash
+
 # Helm tiller RBAC
-cat - << EOF > rbac-config-tiller.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: tiller
-  namespace: kube-system
----
+cat - << EOF > role-tiller.yaml
+kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
 metadata:
-  name: tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
+  name: tiller-manager
+  namespace: $NAMESPACE
+rules:
+- apiGroups: ["", "batch", "extensions", "apps"]
+  resources: ["*"]
+  verbs: ["*"]
+EOF
+kubectl create -f role-tiller.yaml
+cat - << EOF > rolebinding-tiller.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: tiller-binding
+  namespace: $NAMESPACE
 subjects:
-  - kind: ServiceAccount
-    name: tiller
-    namespace: kube-system
-EOF
-kubectl apply -f rbac-config-tiller.yaml
-# Helm tiller service account creation
-kubectl create -f - <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
+- kind: ServiceAccount
   name: tiller
+  namespace: $NAMESPACE
+roleRef:
+  kind: Role
+  name: tiller-manager
+  apiGroup: rbac.authorization.k8s.io
 EOF
-helm init --service-account=tiller
-    
+kubectl create -f rolebinding-tiller.yaml
+# Helm tiller service account creation
+kubectl create serviceaccount tiller --namespace $NAMESPACE
+helm init --service-account=tiller --tiller-namespace $NAMESPACE
+
+# Wait tiller to be in Running state, it can take a while
+while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "Running" ]
+do
+  sleep 5
+done
+
 # Helm nginx-ingress chart installation
-# helm install stable/nginx-ingress
+# helm install stable/nginx-ingress --namespace $NAMESPACE
 
 # Helm gitlab chart installation
 helm repo add gitlab https://charts.gitlab.io/
@@ -104,7 +113,7 @@ helm upgrade --install $RELEASE jupyterhub/jupyterhub \
   --values config.yaml
 
 # Helm knative chart installation
-# helm install knative/knative
+# helm install knative/knative --namespace $NAMESPACE
 
 # Helm jenkins chart installation
 # helm repo update
