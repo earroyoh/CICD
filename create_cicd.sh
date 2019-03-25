@@ -48,7 +48,7 @@ metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
-- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io"]
+- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy"]
   resources: ["*"]
   verbs: ["*"]
 EOF
@@ -110,7 +110,7 @@ kubectl create namespace jhub
 helm upgrade --install jhub jupyterhub/jupyterhub \
   --timeout=600 \
   --namespace jhub  \
-  --tiller-namespace $NAMESPACE
+  --tiller-namespace $NAMESPACE \
   --version=0.8.0 \
   --values config.yaml
 
