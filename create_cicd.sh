@@ -70,3 +70,6 @@ helm install jupyterhub/jupyterhub \
 # Helm knative chart installation
 # helm install knative/knative
 
+# Helm jenkins chart installation
+# helm install stable/jenkins
+
