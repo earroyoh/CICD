@@ -22,6 +22,7 @@ systemctl enable kubelet && systemctl start kubelet
 swapoff -a
 kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
+export NAMESPACE=cicd
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # CNI Calico installation
@@ -40,17 +41,41 @@ kubectl create namespace cicd
 curl -L https://bit.ly/install-helm | bash
 helm init
 
+# Helm tiller RBAC
+cat - << EOF > rbac-config-tiller.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tiller
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: tiller
+    namespace: kube-system
+EOF
+kubectl apply -f rbac-config-tiller.yaml
+    
 # Helm nginx-ingress chart installation
 # helm install stable/nginx-ingress
 
 # Helm gitlab chart installation
 helm repo add gitlab https://charts.gitlab.io/
 helm repo update
-helm upgrade --install gitlab --name cicd gitlab/gitlab \
-  --timeout 600 \
+helm upgrade --install gitlab gitlab/gitlab \
+  --timeout=600 \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
-  --set certmanager-issuer.email=email@mydomain.com
+  --set certmanager-issuer.email=email@mydomain.com \
+  --namespace=$NAMESPACE 
 kubectl get secret k8s-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
@@ -64,11 +89,13 @@ hub:
 proxy:
   secretToken: $PROXY_SECRET_TOKEN
 EOF
-helm install jupyterhub/jupyterhub \
-	--version=v0.8 \
-	--name=jupytercon \
-	--namespace=cicd \
-	-f config.yaml
+export RELEASE=jhub
+kubectl create namespace jhub
+helm upgrade --install $RELEASE jupyterhub/jupyterhub \
+  --timeout=600 \
+  --namespace $NAMESPACE  \
+  --version=0.8.0 \
+  --values config.yaml
 
 # Helm knative chart installation
 # helm install knative/knative
