@@ -27,12 +27,18 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # CNI Calico installation
 kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 
+# Dashboard UI installation
+kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+
 # Helm installation
 # curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz | gtar xvf -
 # mv linux-amd64/helm /usr/local/bin
 # mv linux-amd64/tiller /usr/local/bin
 curl -L https://bit.ly/install-helm | bash
 helm init
+
+# Helm nginx-ingress chart installation
+# helm install stable/nginx-ingress
 
 # Helm gitlab chart installation
 helm repo add gitlab https://charts.gitlab.io/
