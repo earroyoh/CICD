@@ -30,7 +30,7 @@ kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/
 # Dashboard UI installation
 kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
 
-# Create namespace cicd
+# Create namespace
 export NAMESPACE=cicd
 kubectl create namespace $NAMESPACE
 
@@ -48,7 +48,7 @@ metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
-- apiGroups: ["", "batch", "extensions", "apps"]
+- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io"]
   resources: ["*"]
   verbs: ["*"]
 EOF
@@ -74,13 +74,14 @@ kubectl create serviceaccount tiller --namespace $NAMESPACE
 helm init --service-account=tiller --tiller-namespace $NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
+echo "Waiting for tiller to be in Running state..."
 while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "Running" ]
 do
   sleep 5
 done
 
 # Helm nginx-ingress chart installation
-# helm install stable/nginx-ingress --namespace $NAMESPACE
+# helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
 helm repo add gitlab https://charts.gitlab.io/
@@ -90,6 +91,7 @@ helm upgrade --install gitlab gitlab/gitlab \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
   --set certmanager-issuer.email=email@mydomain.com \
+  --tiller-namespace=$NAMESPACE \
   --namespace=$NAMESPACE 
 kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
@@ -104,11 +106,11 @@ hub:
 proxy:
   secretToken: $PROXY_SECRET_TOKEN
 EOF
-export RELEASE=jhub
 kubectl create namespace jhub
-helm upgrade --install $RELEASE jupyterhub/jupyterhub \
+helm upgrade --install jhub jupyterhub/jupyterhub \
   --timeout=600 \
   --namespace jhub  \
+  --tiller-namespace $NAMESPACE
   --version=0.8.0 \
   --values config.yaml
 
