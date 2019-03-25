@@ -22,7 +22,6 @@ systemctl enable kubelet && systemctl start kubelet
 swapoff -a
 kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
-export NAMESPACE=cicd
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # CNI Calico installation
@@ -32,7 +31,8 @@ kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/
 kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
 
 # Create namespace cicd
-kubectl create namespace cicd
+export NAMESPACE=cicd
+kubectl create namespace $NAMESPACE
 
 # Helm installation
 # curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz | gtar xvf -
@@ -76,7 +76,7 @@ helm upgrade --install gitlab gitlab/gitlab \
   --set global.hosts.externalIP=127.0.0.1 \
   --set certmanager-issuer.email=email@mydomain.com \
   --namespace=$NAMESPACE 
-kubectl get secret k8s-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
+kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
 helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
@@ -93,7 +93,7 @@ export RELEASE=jhub
 kubectl create namespace jhub
 helm upgrade --install $RELEASE jupyterhub/jupyterhub \
   --timeout=600 \
-  --namespace $NAMESPACE  \
+  --namespace jhub  \
   --version=0.8.0 \
   --values config.yaml
 
@@ -102,5 +102,5 @@ helm upgrade --install $RELEASE jupyterhub/jupyterhub \
 
 # Helm jenkins chart installation
 # helm repo update
-# helm install --name=jenkins --namespace cicd stable/jenkins
+# helm install --name jenkins --namespace $NAMESPACE stable/jenkins
 
