@@ -30,6 +30,9 @@ kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/
 # Dashboard UI installation
 kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
 
+# Create namespace cicd
+kubectl create namespace cicd
+
 # Helm installation
 # curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz | gtar xvf -
 # mv linux-amd64/helm /usr/local/bin
@@ -43,7 +46,7 @@ helm init
 # Helm gitlab chart installation
 helm repo add gitlab https://charts.gitlab.io/
 helm repo update
-helm upgrade --install gitlab gitlab/gitlab \
+helm upgrade --install gitlab --name cicd gitlab/gitlab \
   --timeout 600 \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
@@ -64,12 +67,13 @@ EOF
 helm install jupyterhub/jupyterhub \
 	--version=v0.8 \
 	--name=jupytercon \
-	--namespace=jupytercon \
+	--namespace=cicd \
 	-f config.yaml
 
 # Helm knative chart installation
 # helm install knative/knative
 
 # Helm jenkins chart installation
-# helm install stable/jenkins
+# helm repo update
+# helm install --name=jenkins --namespace cicd stable/jenkins
 
