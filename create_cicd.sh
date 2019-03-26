@@ -115,6 +115,9 @@ do
   sleep 5
 done
 
+# Create elm context config
+get_helm_token.sh
+
 # Helm nginx-ingress chart installation
 # helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
@@ -127,6 +130,7 @@ helm install gitlab/gitlab \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
   --set certmanager-issuer.email=email@mydomain.com \
+  --kubceonfig config \
   --tiller-namespace=$NAMESPACE \
   --namespace=$NAMESPACE
 kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
@@ -145,6 +149,7 @@ EOF
 helm install jupyterhub/jupyterhub \
   --name jupiterhub-$NAMESPACE \
   --timeout 600 \
+  --kubeconfig config \
   --namespace $NAMESPACE \
   --tiller-namespace $NAMESPACE \
   --version 0.9.4 \
