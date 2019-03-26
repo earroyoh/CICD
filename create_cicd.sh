@@ -116,7 +116,7 @@ do
 done
 
 # Create elm context config
-get_helm_token.sh
+./get_helm_token.sh
 
 # Helm nginx-ingress chart installation
 # helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
@@ -130,7 +130,7 @@ helm install gitlab/gitlab \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
   --set certmanager-issuer.email=email@mydomain.com \
-  --kubceonfig config \
+  --kubeconfig config \
   --tiller-namespace=$NAMESPACE \
   --namespace=$NAMESPACE
 kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
