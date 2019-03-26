@@ -71,7 +71,7 @@ roleRef:
 EOF
 kubectl create -f rolebinding-tiller.yaml
 
-cat > manifests/helm-clusterrole.yaml <<EOF
+cat > helm-clusterrole.yaml <<EOF
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -84,6 +84,7 @@ rules:
     resources: ["pods"]
     verbs: ["list", "get"]
 EOF
+kubectl create -f helm-clusterrole.yaml
 
 cat > helm-clusterrolebinding.yaml <<EOF
 kind: ClusterRoleBinding
@@ -99,6 +100,7 @@ subjects:
     name: helm
     namespace: $NAMESPACE
 EOF
+kubectl create -f helm-clusterrolebinding.yaml
 
 # Helm tiller service account creation
 kubectl create serviceaccount tiller --namespace $NAMESPACE
