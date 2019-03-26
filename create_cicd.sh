@@ -41,20 +41,20 @@ kubectl create namespace $NAMESPACE
 curl -L https://bit.ly/install-helm | bash
 
 # Helm tiller RBAC
-cat - << EOF > role-tiller.yaml
+cat > tiller-roles.yaml <<EOF
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
-#- apiGroups: ["", "batch", "extensions", "apps", "rbac.authorization.k8s.io", "policy", "autoscaling", "apiextensions.k8s.io"]
-- apiGroups: ["*"]
+- apiGroups: ["", "batch", "extensions", "apps"]
   resources: ["*"]
   verbs: ["*"]
 EOF
-kubectl create -f role-tiller.yaml
-cat - << EOF > rolebinding-tiller.yaml
+kubectl create -f tiller-roles.yaml
+
+cat > rolebinding-tiller.yaml <<EOF
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -70,9 +70,41 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 EOF
 kubectl create -f rolebinding-tiller.yaml
+
+cat > manifests/helm-clusterrole.yaml <<EOF
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: helm-clusterrole
+rules:
+  - apiGroups: [""]
+    resources: ["pods/portforward"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "get"]
+EOF
+
+cat > helm-clusterrolebinding.yaml <<EOF
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: helm-clusterrolebinding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: helm-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: helm
+    namespace: $NAMESPACE
+EOF
+
 # Helm tiller service account creation
 kubectl create serviceaccount tiller --namespace $NAMESPACE
-helm init --service-account=tiller --tiller-namespace $NAMESPACE
+kubectl create serviceaccount helm --namespace $NAMESPACE
+
+helm init --service-account tiller --tiller-namespace $NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
@@ -89,12 +121,12 @@ helm repo add gitlab https://charts.gitlab.io/
 helm repo update
 helm install gitlab/gitlab \
   --name gitlab-$NAMESPACE \
-  --timeout=600 \
+  --timeout 600 \
   --set global.hosts.domain=mydomain.com \
   --set global.hosts.externalIP=127.0.0.1 \
   --set certmanager-issuer.email=email@mydomain.com \
   --tiller-namespace=$NAMESPACE \
-  --namespace=$NAMESPACE 
+  --namespace=$NAMESPACE
 kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
@@ -108,13 +140,12 @@ hub:
 proxy:
   secretToken: $PROXY_SECRET_TOKEN
 EOF
-kubectl create namespace jhub
 helm install jupyterhub/jupyterhub \
   --name jupiterhub-$NAMESPACE \
-  --timeout=600 \
+  --timeout 600 \
   --namespace $NAMESPACE \
   --tiller-namespace $NAMESPACE \
-  --version=0.8.0 \
+  --version 0.9.4 \
   --values config.yaml
 
 # Helm knative chart installation
@@ -123,4 +154,3 @@ helm install jupyterhub/jupyterhub \
 # Helm jenkins chart installation
 # helm repo update
 # helm install --name jenkins --namespace $NAMESPACE stable/jenkins
-
