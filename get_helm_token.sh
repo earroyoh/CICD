@@ -5,10 +5,10 @@ export NAMESPACE=cicd
 SECRET=$(kubectl -n $NAMESPACE get sa helm -o jsonpath='{.secrets[].name}')
 
 # Retrieve the token from the secret and decode it
-TOKEN=$(kubectl get secrets -n $NAMESPACE $SECRET -o jsonpath='{.data.token}' | base64 -D)
+TOKEN=$(kubectl get secrets -n $NAMESPACE $SECRET -o jsonpath='{.data.token}' | base64 --decode)
 
 # Retrieve the CA from the secret, decode it and write it to disk
-kubectl get secrets -n $NAMESPACE $SECRET -o jsonpath='{.data.ca\.crt}' | base64 -D > ca.crt
+kubectl get secrets -n $NAMESPACE $SECRET -o jsonpath='{.data.ca\.crt}' | base64 --decode > ca.crt
 
 # Retrieve the current context
 CONTEXT=$(kubectl config current-context)
