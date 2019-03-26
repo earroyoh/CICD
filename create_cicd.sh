@@ -48,8 +48,18 @@ metadata:
   name: tiller-manager
   namespace: $NAMESPACE
 rules:
+#- apiGroups: ["*"]
 - apiGroups: ["", "batch", "extensions", "apps"]
   resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["*"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["*"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
   verbs: ["*"]
 EOF
 kubectl create -f tiller-roles.yaml
@@ -152,7 +162,7 @@ helm install jupyterhub/jupyterhub \
   --kubeconfig config \
   --namespace $NAMESPACE \
   --tiller-namespace $NAMESPACE \
-  --version 0.9.4 \
+  --version 0.8.0 \
   --values config.yaml
 
 # Helm knative chart installation
