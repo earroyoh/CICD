@@ -9,3 +9,5 @@ helm del --purge gitlab-cicd --tiller-namespace $NAMESPACE
 kubectl delete rolebinding/tiller-clusterrolebinding -n $NAMESPACE
 kubectl delete deployment tiller-deploy -n $NAMESPACE
 kubectl delete serviceaccount tiller -n $NAMESPACE
+#kubeadm reset
+# rm -Rf /var/lib/etcd
