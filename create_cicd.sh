@@ -20,7 +20,7 @@ EOF
 mkdir -p /etc/systemd/system/docker.service.d
 
 systemctl enable docker-ce
-systemctl start docker
+systemctl daemon-reload && systemctl restart docker
 
 # Kubernetes standalone cluster installation
 cat << EOF > /etc/yum.repos.d/kubernetes.repo
@@ -37,6 +37,7 @@ yum install -y kubelet kubeadm kubectl
 systemctl enable kubelet && systemctl start kubelet
 
 swapoff -a
+#export NOPROXY="localhost,127.0.0.1,10.96.0.0/12"
 kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl taint nodes --all node-role.kubernetes.io/master-
