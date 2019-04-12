@@ -45,7 +45,7 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # CNI Calico installation
 # Wait for cluster to be in Ready, it can take a while
 echo "Waiting for cluster to be in Ready state..."
-while [ `kubectl get nodes | awk '{print $2}'` != "Ready" ]
+while [ `kubectl get nodes | tail -1 | awk '{print $2}'` != "Ready" ]
 do
   sleep 5
 done
