@@ -37,7 +37,7 @@ yum install -y kubelet kubeadm kubectl
 systemctl enable kubelet && systemctl start kubelet
 
 swapoff -a
-#export NOPROXY="localhost,127.0.0.1,10.96.0.0/12"
+#export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
 kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl taint nodes --all node-role.kubernetes.io/master-
