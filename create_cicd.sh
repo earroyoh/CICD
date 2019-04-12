@@ -1,7 +1,24 @@
 #!/bin/sh
+# CentOS/RHEL installation
 
 # docker-ce installation
 yum install -y docker-ce
+# Setup docker daemon.
+cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2",
+  "storage-opts": [
+    "overlay2.override_kernel_check=true"
+  ]
+}
+EOF
+mkdir -p /etc/systemd/system/docker.service.d
+
 systemctl enable docker-ce
 systemctl start docker
 
@@ -25,6 +42,12 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # CNI Calico installation
+# Wait for cluster to be in Ready, it can take a while
+echo "Waiting for cluster to be in Ready state..."
+while [ `kubectl get nodes | awk '{print $2}'` != "Ready" ]
+do
+  sleep 5
+done
 kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 
 # Dashboard UI installation
