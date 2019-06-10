@@ -7,7 +7,7 @@
 # docker-ce installation
 #curl -fsSL https://get.docker.com -o get-docker.sh
 #sh get-docker.sh
-apt-get install \
+apt-get install -y \
     apt-transport-https \
     ca-certificates \
     curl \
