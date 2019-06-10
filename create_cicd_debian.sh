@@ -70,11 +70,10 @@ evictionHard:
     nodefs.available: "<10%"
 EOF
 sed -i 's#Environment="KUBELET_KUBECONFIG_ARGS=-.*#Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true --config /etc/kubernetes/config_file.yaml"#g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+swapoff -a
 systemctl enable kubelet && systemctl restart kubelet
 
-swapoff -a
-export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
-
+export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
 export KUBECONFIG=/etc/kubernetes/admin.conf
 kubectl taint nodes --all node-role.kubernetes.io/master-
