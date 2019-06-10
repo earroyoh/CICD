@@ -51,7 +51,7 @@ apt-get update -y
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
-systemctl enable kubelet && systemctl start kubelet
+systemctl enable kubelet && systemctl restart kubelet
 
 swapoff -a
 export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
@@ -62,11 +62,11 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # CNI Calico installation
 # Wait for cluster to be in Ready, it can take a while
-echo "Waiting for cluster to be in Ready state..."
-while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
-do
-  sleep 5
-done
+#echo "Waiting for cluster to be in Ready state..."
+#while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
+#do
+#  sleep 5
+#done
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 
