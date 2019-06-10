@@ -5,7 +5,22 @@
 #apt-get update -y
 
 # docker-ce installation
-apt-get install -y docker-ce
+#curl -fsSL https://get.docker.com -o get-docker.sh
+#sh get-docker.sh
+apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    software-properties-common
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/debian \
+   $(lsb_release -cs) \
+   stable"
+apt-get update -y
+apt-get install -y docker-ce docker-ce-cli containerd.io
+
 # Setup docker daemon.
 cat > /etc/docker/daemon.json <<EOF
 {
@@ -20,17 +35,22 @@ cat > /etc/docker/daemon.json <<EOF
   ]
 }
 EOF
-mkdir -p /etc/systemd/system/docker.service.d
+mkdir -p /etc/apt/apt.conf.d/docker.service.d
 
-systemctl enable docker-ce
+systemctl enable docker
 systemctl daemon-reload && systemctl restart docker
+usermod -aG docker debian
 
 # Kubernetes standalone cluster installation
-cat << EOF > /etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-stretch main
+apt-get update && apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
-setenforce 0
+apt-get update -y
 apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+#setenforce 0
 systemctl enable kubelet && systemctl start kubelet
 
 swapoff -a
