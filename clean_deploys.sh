@@ -9,6 +9,6 @@ helm del --purge gitlab-cicd --tiller-namespace $NAMESPACE
 kubectl delete rolebinding/tiller-clusterrolebinding -n $NAMESPACE
 kubectl delete deployment tiller-deploy -n $NAMESPACE
 kubectl delete serviceaccount tiller -n $NAMESPACE
-#kubectl delete all,secrets,sa,configmaps,deployments,ingresses,clusterroles,clusterrolebindings,virtualservices,destinationrules,customresourcedefinitions --selector=app=istio -n $NAMESPACE
+#kubectl delete secrets,sa,configmaps,services,deployments,pods,ingresses,clusterroles,clusterrolebindings,customresourcedefinition,serviceaccounts --selector=namespace=$NAMESPACE
 #kubeadm reset
 # rm -Rf /var/lib/etcd
