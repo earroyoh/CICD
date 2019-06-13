@@ -98,7 +98,7 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
-$TOKEN=`kubectl -n kube-system describe secret default | grep "token:" | awk '{print $2}'`
+$TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
 echo "kubernetes-dashboard token: ${TOKEN}"
 kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
