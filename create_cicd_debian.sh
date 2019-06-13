@@ -221,5 +221,10 @@ helm install jupyterhub/jupyterhub \
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
 helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
-helm install istio/install/kubernetes/helm/istio --name istio --namespace $NAMESPACE
-
+helm template \
+    --set kiali.enabled=true \
+    --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
+    --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+    istio/install/kubernetes/helm/istio \
+    --name istio --namespace $NAMESPACE > istio.yaml
+kubectl apply -f istio.yaml
