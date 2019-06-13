@@ -224,6 +224,22 @@ done
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
 helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+# Create secrets for kiali access
+export KIALI_USERNAME=`openssl rand -hex 4 | base64`
+export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kiali
+  namespace: $NAMESPACE
+  labels:
+    app: kiali
+type: Opaque
+data:
+  username: $KIALI_USERNAME
+  passphrase: $KIALI_PASSPHRASE
+EOF
 helm template \
     --set kiali.enabled=true \
     --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
