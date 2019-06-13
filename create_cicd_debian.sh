@@ -216,4 +216,10 @@ helm install jupyterhub/jupyterhub \
 
 # Helm jenkins chart installation
 # helm repo update
-# helm install --name jenkins --namespace $NAMESPACE stable/jenkins
+# helm install stable/jenkins --name jenkins --namespace $NAMESPACE
+
+# Helm istio chart installation
+git clone https://github.com/istio/istio.git
+helm install install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+helm install install/kubernetes/helm/istio --name istio --namespace $NAMESPACE
+
