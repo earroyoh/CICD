@@ -220,6 +220,6 @@ helm install jupyterhub/jupyterhub \
 
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
-helm install install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
-helm install install/kubernetes/helm/istio --name istio --namespace $NAMESPACE
+helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+helm install istio/install/kubernetes/helm/istio --name istio --namespace $NAMESPACE
 
