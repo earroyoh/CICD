@@ -162,6 +162,7 @@ EOF
 kubectl create -f helm-clusterrolebinding.yaml
 
 helm init --service-account tiller --tiller-namespace $NAMESPACE
+export TILLER_NAMESPACE=$NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
