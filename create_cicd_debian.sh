@@ -42,7 +42,7 @@ systemctl daemon-reload && systemctl restart docker
 usermod -aG docker debian
 
 # Kubernetes standalone cluster installation
-apt-get remove -y kubelet kubeadm kubectl --purge
+apt-get remove -y --allow-change-held-packages kubelet kubeadm kubectl --purge
 apt-get update -y && apt-get install -y apt-transport-https curl
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
@@ -52,7 +52,7 @@ apt-get update -y
 apt-get install -y kubelet kubeadm kubectl
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
-cat <<EOF > /etc/kubernetes/config_file.yaml
+cat <<EOF > config_kubeadm.yaml
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 cgroupdriver:
@@ -69,15 +69,18 @@ evictionHard:
     memory.available: "<500Mi"
     nodefs.available: "<10%"
 EOF
-sed -i 's#Environment="KUBELET_KUBECONFIG_ARGS=-.*#Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true --config /etc/kubernetes/config_file.yaml"#g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+#sed -i 's#Environment="KUBELET_KUBECONFIG_ARGS=-.*#Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true --config /etc/kubernetes/config_file.yaml"#g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 swapoff -a
 systemctl enable kubelet && systemctl restart kubelet
+#sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
+systemctl restart kubelet
 
 export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
 export KUBECONFIG=/etc/kubernetes/admin.conf
-kubectl taint nodes --all node-role.kubernetes.io/master-
-sleep 120
+
+#echo "Waiting a while to let the kube-system containers run..."
+#sleep 120
 
 # CNI Calico installation
 # Wait for cluster to be in Ready, it can take a while
@@ -86,9 +89,12 @@ sleep 120
 #do
 #  sleep 5
 #done
-#kubectl apply -f https://docs.projectcalico.org/v3.7/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-#kubectl apply -f https://docs.projectcalico.org/v3.7/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+
+# Comment out for a single node cluster
+kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
 kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml

@@ -1,0 +1,4 @@
+cicd-hub:
+  cookieSecret: 43abbf0ba587b76e68e6d7fd1e195c370deeaa73ee7a1d6f1cbf1cb6712a5905
+cicd-proxy:
+  secretToken: d296cab6af02ae360cb8ee60467b13b0618b48c085b5b3bb81f6fbcb5bd6c1c1

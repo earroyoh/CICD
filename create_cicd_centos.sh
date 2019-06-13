@@ -41,17 +41,18 @@ export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
 
 kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
-kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # CNI Calico installation
 # Wait for cluster to be in Ready, it can take a while
-echo "Waiting for cluster to be in Ready state..."
-while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
-do
+#echo "Waiting for cluster to be in Ready state..."
+#while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
+#do
   sleep 5
 done
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+
+kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
 kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
