@@ -225,7 +225,7 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
 helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
-# Create secrets for kiali access
+# Create secret for kiali access
 export KIALI_USERNAME=`openssl rand -hex 4 | base64`
 export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
 cat <<EOF | kubectl apply -f -
@@ -246,6 +246,7 @@ helm template \
     --set grafana.enabled=true \
     --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
     --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+#    --set "kiali.deployment.accessible_namespaces=$NAMESPACE" \
     istio/install/kubernetes/helm/istio \
     --name istio --namespace $NAMESPACE > istio.yaml
 kubectl apply -f istio.yaml
