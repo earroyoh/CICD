@@ -93,12 +93,10 @@ kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
-# Comment out for a single node cluster
-kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
-$TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
+TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
 echo "kubernetes-dashboard token: ${TOKEN}"
 kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
@@ -174,7 +172,10 @@ do
   sleep 5
 done
 
-# Create elm context config
+# Comment out for a single node cluster to let it schedule pods
+kubectl taint nodes --all node-role.kubernetes.io/master-
+
+# Create helm context config
 ./get_helm_token.sh
 
 # Helm nginx-ingress chart installation
@@ -242,6 +243,7 @@ data:
 EOF
 helm template \
     --set kiali.enabled=true \
+    --set grafana.enabled=true \
     --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
     --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
     istio/install/kubernetes/helm/istio \
