@@ -1,5 +1,5 @@
 #!/bin/sh
-export NAMESPACE=cicd
+export NAMESPACE=$1
 
 # Find the secret associated with the Service Account
 SECRET=$(kubectl -n $NAMESPACE get sa helm -o jsonpath='{.secrets[].name}')
