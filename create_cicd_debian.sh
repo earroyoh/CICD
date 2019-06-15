@@ -101,7 +101,7 @@ echo "kubernetes-dashboard token: ${TOKEN}"
 kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
 # Create namespace
-export NAMESPACE=cicd
+export NAMESPACE=istio-system
 kubectl create namespace $NAMESPACE
 
 # Helm installation
@@ -176,7 +176,7 @@ done
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Create helm context config
-./get_helm_token.sh
+./get_helm_token.sh $NAMESPACE
 
 # Helm nginx-ingress chart installation
 # helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
@@ -225,9 +225,19 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
 helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+
+# Wait istio-init to complete 
+echo "Waiting for tiller to be in Running state..."
+while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
+do
+  sleep 5
+done
+
 # Create secret for kiali access
-export KIALI_USERNAME=`openssl rand -hex 4 | base64`
-export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
+#export KIALI_USERNAME=`openssl rand -hex 4 | base64`
+#export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
+export KIALI_USERNAME=`echo admin | base64`
+export KIALI_PASSPHRASE=`echo admin | base64`
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
@@ -246,7 +256,6 @@ helm template \
     --set grafana.enabled=true \
     --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
     --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
-#    --set "kiali.deployment.accessible_namespaces=$NAMESPACE" \
     istio/install/kubernetes/helm/istio \
     --name istio --namespace $NAMESPACE > istio.yaml
 kubectl apply -f istio.yaml
