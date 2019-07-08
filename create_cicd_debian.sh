@@ -2,7 +2,7 @@
 # Debian/Ubuntu installation
 
 # Repo update
-#apt-get update -y
+apt-get update -y
 
 # docker-ce installation
 #curl -fsSL https://get.docker.com -o get-docker.sh
@@ -13,7 +13,7 @@ apt-get install -y \
     curl \
     gnupg2 \
     software-properties-common
-curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/debian \
    $(lsb_release -cs) \
@@ -182,18 +182,18 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
-#helm repo add gitlab https://charts.gitlab.io/
-#helm repo update
-#helm install gitlab/gitlab \
-#  --name $NAMESPACE-gitlab \
-#  --timeout 600 \
-#  --set global.hosts.domain=mydomain.com \
-#  --set global.hosts.externalIP=127.0.0.1 \
-#  --set certmanager-issuer.email=gitlab@mydomain.com \
-#  --kubeconfig config \
-#  --tiller-namespace $NAMESPACE \
-#  --namespace $NAMESPACE
-#kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
+helm repo add gitlab https://charts.gitlab.io/
+helm repo update
+helm install gitlab/gitlab \
+  --name $NAMESPACE-gitlab \
+  --timeout 600 \
+  --set global.hosts.domain=mydomain.com \
+  --set global.hosts.externalIP=127.0.0.1 \
+  --set certmanager-issuer.email=gitlab@mydomain.com \
+  --kubeconfig config \
+  --tiller-namespace $NAMESPACE \
+  --namespace $NAMESPACE
+kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
 #helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
@@ -223,39 +223,39 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 # helm install stable/jenkins --name jenkins --namespace $NAMESPACE
 
 # Helm istio chart installation
-git clone https://github.com/istio/istio.git
-helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+#git clone https://github.com/istio/istio.git
+#helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
 
 # Wait istio-init to complete 
-echo "Waiting for tiller to be in Running state..."
-while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
-do
-  sleep 5
-done
+#echo "Waiting for istio-init to be in Running state..."
+#while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
+#do
+#  sleep 5
+#done
 
 # Create secret for kiali access
 #export KIALI_USERNAME=`openssl rand -hex 4 | base64`
 #export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
-export KIALI_USERNAME=`echo admin | base64`
-export KIALI_PASSPHRASE=`echo admin | base64`
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kiali
-  namespace: $NAMESPACE
-  labels:
-    app: kiali
-type: Opaque
-data:
-  username: $KIALI_USERNAME
-  passphrase: $KIALI_PASSPHRASE
-EOF
-helm template \
-    --set kiali.enabled=true \
-    --set grafana.enabled=true \
-    --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
-    --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
-    istio/install/kubernetes/helm/istio \
-    --name istio --namespace $NAMESPACE > istio.yaml
-kubectl apply -f istio.yaml
+#export KIALI_USERNAME=`echo admin | base64`
+#export KIALI_PASSPHRASE=`echo admin | base64`
+#cat <<EOF | kubectl apply -f -
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: kiali
+#  namespace: $NAMESPACE
+#  labels:
+#    app: kiali
+#type: Opaque
+#data:
+#  username: $KIALI_USERNAME
+#  passphrase: $KIALI_PASSPHRASE
+#EOF
+#helm template \
+#    --set kiali.enabled=true \
+#    --set grafana.enabled=true \
+#    --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
+#    --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+#    istio/install/kubernetes/helm/istio \
+#    --name istio --namespace $NAMESPACE > istio.yaml
+#kubectl apply -f istio.yaml
