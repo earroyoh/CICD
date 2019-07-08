@@ -75,9 +75,15 @@ systemctl enable kubelet && systemctl restart kubelet
 #sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
 systemctl restart kubelet
 
-export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16"
+export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16,172.17.186.0/24,172.17.16.0/24"
 kubeadm init --pod-network-cidr=192.168.0.0/16
+
 export KUBECONFIG=/etc/kubernetes/admin.conf
+cp /etc/kubernetes/admin.conf /home/debian/.kube/
+chown debian:debian /home/debian/.kube/admin.conf
+chmod 600 /home/debian/.kube/admin.conf
+kubectl -n kube-system get cm kubeadm-config -oyaml > kubeadm-config.yaml
+kubeadm token create --print-join-command > kubeadm-join-command
 
 #echo "Waiting a while to let the kube-system containers run..."
 #sleep 120
@@ -93,12 +99,15 @@ kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
-
 # Dashboard UI installation
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
 TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
 echo "kubernetes-dashboard token: ${TOKEN}"
 kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
+
+# kubernetes/ingress-nginx
+#su - $USER -c git clone https://github.com/kubernetes/ingress-nginx.git
+#su - $USER cd ingress-nginx/deploy/cloud-generic;kubectl apply -f kustomization.yaml
 
 # Create namespace
 export NAMESPACE=istio-system
@@ -179,21 +188,22 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 ./get_helm_token.sh $NAMESPACE
 
 # Helm nginx-ingress chart installation
-# helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
+helm repo update
+helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
-helm repo add gitlab https://charts.gitlab.io/
-helm repo update
-helm install gitlab/gitlab \
-  --name $NAMESPACE-gitlab \
-  --timeout 600 \
-  --set global.hosts.domain=mydomain.com \
-  --set global.hosts.externalIP=127.0.0.1 \
-  --set certmanager-issuer.email=gitlab@mydomain.com \
-  --kubeconfig config \
-  --tiller-namespace $NAMESPACE \
-  --namespace $NAMESPACE
-kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
+#helm repo add gitlab https://charts.gitlab.io/
+#helm repo update
+#helm install gitlab/gitlab \
+#  --name $NAMESPACE-gitlab \
+#  --timeout 600 \
+#  --set global.hosts.domain=mydomain.com \
+#  --set global.hosts.externalIP=127.0.0.1 \
+#  --set certmanager-issuer.email=gitlab@mydomain.com \
+#  --kubeconfig config \
+#  --tiller-namespace $NAMESPACE \
+#  --namespace $NAMESPACE
+#kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
 #helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
