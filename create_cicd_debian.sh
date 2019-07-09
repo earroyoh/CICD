@@ -99,6 +99,9 @@ kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
+# Comment out for a single node cluster to let it schedule pods
+kubectl taint nodes --all node-role.kubernetes.io/master-
+
 # Dashboard UI installation
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
 TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
@@ -181,8 +184,6 @@ do
   sleep 5
 done
 
-# Comment out for a single node cluster to let it schedule pods
-kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
