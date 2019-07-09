@@ -110,7 +110,7 @@ kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
 # kubernetes/ingress-nginx
 #su - $USER -c git clone https://github.com/kubernetes/ingress-nginx.git
-#su - $USER cd ingress-nginx/deploy/cloud-generic;kubectl apply -f kustomization.yaml
+#su - $USER kubectl apply -f ingress-nginx/deploy/static/mandatory.yaml
 
 # Create namespace
 export NAMESPACE=istio-system
