@@ -47,8 +47,8 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 #echo "Waiting for cluster to be in Ready state..."
 #while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
 #do
-  sleep 5
-done
+#  sleep 5
+#done
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
 
