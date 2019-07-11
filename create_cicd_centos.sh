@@ -41,7 +41,7 @@ export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16,172.17.186.0/24
 kubeadm init --pod-network-cidr=192.168.0.0/16
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
-cp /etc/kubernetes/admin.conf /home/debian/.kube/
+cp /etc/kubernetes/admin.conf $HOME/.kube/
 chown $USER:$USER /home/debian/.kube/admin.conf
 chmod 600 $HOME/.kube/admin.conf
 kubectl -n kube-system get cm kubeadm-config -oyaml > kubeadm-config.yaml
