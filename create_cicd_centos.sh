@@ -34,13 +34,21 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cl
 EOF
 setenforce 0
 yum install -y kubelet kubeadm kubectl
+swapoff -a
 systemctl enable kubelet && systemctl start kubelet
 
-swapoff -a
-export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
+export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16,172.17.186.0/24,172.17.16.0/24"
+kubeadm init --pod-network-cidr=192.168.0.0/16
 
-kubeadm init
 export KUBECONFIG=/etc/kubernetes/admin.conf
+cp /etc/kubernetes/admin.conf /home/debian/.kube/
+chown $USER:$USER /home/debian/.kube/admin.conf
+chmod 600 $HOMR/.kube/admin.conf
+kubectl -n kube-system get cm kubeadm-config -oyaml > kubeadm-config.yaml
+kubeadm token create --print-join-command > kubeadm-join-command
+
+#echo "Waiting a while to let the kube-system containers run..."
+#sleep 120
 
 # CNI Calico installation
 # Wait for cluster to be in Ready, it can take a while
@@ -51,14 +59,23 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 #done
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
 
+# Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
-kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
+echo "kubernetes-dashboard token: ${TOKEN}"
+kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
+
+# kubernetes/ingress-nginx
+#su - $USER -c git clone https://github.com/kubernetes/ingress-nginx.git
+#su - $USER kubectl apply -f ingress-nginx/deploy/static/mandatory.yaml
 
 # Create namespace
-export NAMESPACE=cicd
+export NAMESPACE=istio-system
 kubectl create namespace $NAMESPACE
 
 # Helm installation
@@ -129,49 +146,89 @@ do
   sleep 5
 done
 
-# Create elm context config
-./get_helm_token.sh
+
+# Create helm context config
+./get_helm_token.sh $NAMESPACE
 
 # Helm nginx-ingress chart installation
-# helm install stable/nginx-ingress --tiller-namespace $NAMESPACE --namespace $NAMESPACE
+helm repo update
+helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
-helm repo add gitlab https://charts.gitlab.io/
-helm repo update
-helm install gitlab/gitlab \
-  --name $NAMESPACE-gitlab \
-  --timeout 600 \
-  --set global.hosts.domain=mydomain.com \
-  --set global.hosts.externalIP=127.0.0.1 \
-  --set certmanager-issuer.email=gitlab@mydomain.com \
-  --kubeconfig config \
-  --tiller-namespace $NAMESPACE \
-  --namespace $NAMESPACE
-kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
+#helm repo add gitlab https://charts.gitlab.io/
+#helm repo update
+#helm install gitlab/gitlab \
+#  --name $NAMESPACE-gitlab \
+#  --timeout 600 \
+#  --set global.hosts.domain=mydomain.com \
+#  --set global.hosts.externalIP=127.0.0.1 \
+#  --set certmanager-issuer.email=gitlab@mydomain.com \
+#  --kubeconfig config \
+#  --tiller-namespace $NAMESPACE \
+#  --namespace $NAMESPACE
+#kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
-helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
-helm repo update
-export HUB_COOKIE_SECRET=`openssl rand -hex 32`
-export PROXY_SECRET_TOKEN=`openssl rand -hex 32`
-cat - << EOF > config.yaml
-$NAMESPACE-hub:
-  cookieSecret: $HUB_COOKIE_SECRET
-$NAMESPACE-proxy:
-  secretToken: $PROXY_SECRET_TOKEN
-EOF
-helm install jupyterhub/jupyterhub \
-  --name $NAMESPACE-jupyterhub \
-  --timeout 600 \
-  --kubeconfig config \
-  --namespace $NAMESPACE \
-  --tiller-namespace $NAMESPACE \
-  --version 0.8.0 \
-  --values config.yaml
+#helm repo add jupyterhub https://jupyterhub.github.io/helm-chart
+#helm repo update
+#export HUB_COOKIE_SECRET=`openssl rand -hex 32`
+#export PROXY_SECRET_TOKEN=`openssl rand -hex 32`
+#cat - << EOF > config.yaml
+#$NAMESPACE-hub:
+#  cookieSecret: $HUB_COOKIE_SECRET
+#$NAMESPACE-proxy:
+#  secretToken: $PROXY_SECRET_TOKEN
+#EOF
+#helm install jupyterhub/jupyterhub \
+#  --name $NAMESPACE-jupyterhub \
+#  --timeout 600 \
+#  --kubeconfig config \
+#  --namespace $NAMESPACE \
+#  --tiller-namespace $NAMESPACE \
+#  --version 0.8.0 \
+#  --values config.yaml
 
 # Helm knative chart installation
 # helm install knative/knative --namespace $NAMESPACE
 
 # Helm jenkins chart installation
 # helm repo update
-# helm install --name jenkins --namespace $NAMESPACE stable/jenkins
+# helm install stable/jenkins --name jenkins --namespace $NAMESPACE
+
+# Helm istio chart installation
+#git clone https://github.com/istio/istio.git
+#helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+
+# Wait istio-init to complete 
+#echo "Waiting for istio-init to be in Running state..."
+#while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
+#do
+#  sleep 5
+#done
+
+# Create secret for kiali access
+#export KIALI_USERNAME=`openssl rand -hex 4 | base64`
+#export KIALI_PASSPHRASE=`openssl rand -hex 16 | base64`
+#export KIALI_USERNAME=`echo admin | base64`
+#export KIALI_PASSPHRASE=`echo admin | base64`
+#cat <<EOF | kubectl apply -f -
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#  name: kiali
+#  namespace: $NAMESPACE
+#  labels:
+#    app: kiali
+#type: Opaque
+#data:
+#  username: $KIALI_USERNAME
+#  passphrase: $KIALI_PASSPHRASE
+#EOF
+#helm template \
+#    --set kiali.enabled=true \
+#    --set grafana.enabled=true \
+#    --set "kiali.dashboard.jaegerURL=http://jaeger-query:16686" \
+#    --set "kiali.dashboard.grafanaURL=http://grafana:3000" \
+#    istio/install/kubernetes/helm/istio \
+#    --name istio --namespace $NAMESPACE > istio.yaml
+#kubectl apply -f istio.yaml
