@@ -13,11 +13,11 @@
 #done
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 #curl -L https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml -o calico.yaml
-curl -L -o calico.yaml https://docs.projectcalico.org/v3.9/manifests/calico.yaml
-POD_CIDR="172.30.0.0/16" \
-	sed -i -e "s?192.168.0.0/16?$POD_CIDR?g" calico.yaml
+#curl -L -o calico.yaml https://docs.projectcalico.org/v3.9/manifests/calico.yaml
+#POD_CIDR="172.30.0.0/16" \
+#	sed -i -e "s?192.168.0.0/16?$POD_CIDR?g" calico.yaml
 #kubectl apply -f calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.9/manifests/calico.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.9/manifests/calico.yaml
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -27,10 +27,10 @@ export NAMESPACE=istio-system
 kubectl create namespace $NAMESPACE
 
 # Helm installation
-#curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.14.1-linux-amd64.tar.gz | tar zxvf -
-#sudo mv linux-amd64/helm /usr/local/bin
-#sudo mv linux-amd64/tiller /usr/local/bin
-#sudo curl -L https://bit.ly/install-helm | bash
+curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.14.1-linux-amd64.tar.gz | tar zxvf -
+sudo mv linux-amd64/helm /usr/local/bin
+sudo mv linux-amd64/tiller /usr/local/bin
+#curl -L https://bit.ly/install-helm | bash
 
 # Helm tiller service account creation
 kubectl create serviceaccount tiller --namespace $NAMESPACE
