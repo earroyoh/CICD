@@ -2,7 +2,7 @@
 # Debian/Ubuntu installation
 
 # Repo update
-apt-get update -y
+#apt-get update -y
 
 # docker-ce installation
 #curl -fsSL https://get.docker.com -o get-docker.sh
@@ -13,13 +13,14 @@ apt-get install -y \
     curl \
     gnupg2 \
     software-properties-common
-curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/debian \
-   $(lsb_release -cs) \
-   stable"
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io
+#curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+#add-apt-repository \
+#   "deb [arch=amd64] https://download.docker.com/linux/debian \
+#   buster \
+#   stable"
+#apt-get update -y
+#apt-get install -y docker.io docker-ce-cli containerd.io
+apt-get install -y docker.io
 
 # Setup docker daemon.
 cat > /etc/docker/daemon.json <<EOF
@@ -72,10 +73,10 @@ EOF
 #sed -i 's#Environment="KUBELET_KUBECONFIG_ARGS=-.*#Environment="KUBELET_KUBECONFIG_ARGS=--kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true --config /etc/kubernetes/config_file.yaml"#g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 swapoff -a
 systemctl enable kubelet && systemctl restart kubelet
-#sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
+sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
 systemctl restart kubelet
 
-export NO_PROXY="localhost,127.0.0.1,10.96.0.0/12,192.168.0.0/16,172.17.186.0/24,172.17.16.0/24"
+export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.17.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
@@ -95,9 +96,9 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #do
 #  sleep 5
 #done
-kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-#kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.9/manifests/calico.yaml
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -174,16 +175,22 @@ subjects:
 EOF
 kubectl create -f helm-clusterrolebinding.yaml
 
-helm init --service-account tiller --tiller-namespace $NAMESPACE
+# HELM init
 export TILLER_NAMESPACE=$NAMESPACE
+# Tiller without TLS VERIFY
+#helm init --service-account tiller --tiller-namespace $NAMESPACE
+# Tiller with TLS VERIFY
+IFACE=wlan0
+EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
+./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
+helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
-while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "Running" ]
+while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` !~ "Running" ]
 do
   sleep 5
 done
-
 
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
