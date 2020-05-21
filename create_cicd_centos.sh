@@ -152,7 +152,7 @@ done
 
 # Helm nginx-ingress chart installation
 helm repo update
-helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
+helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
