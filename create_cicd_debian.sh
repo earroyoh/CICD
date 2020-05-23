@@ -50,7 +50,7 @@ cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update -y
-apt-get install -y kubelet kubeadm kubectl
+apt-get install -y --allow-change-held-packages kubeadm=1.17.6-00 kubectl=1.17.6-00 kubelet=1.17.6-00
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
@@ -75,6 +75,8 @@ swapoff -a
 systemctl enable kubelet && systemctl restart kubelet
 sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
 systemctl restart kubelet
+
+docker pull coredns/coredns
 
 export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.17.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
@@ -180,14 +182,14 @@ export TILLER_NAMESPACE=$NAMESPACE
 # Tiller without TLS VERIFY
 #helm init --service-account tiller --tiller-namespace $NAMESPACE
 # Tiller with TLS VERIFY
-IFACE=wlan0
+IFACE=wlo1
 EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
-while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` !~ "Running" ]
+while [ "`kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}`" != "Running" ] 
 do
   sleep 5
 done
@@ -197,7 +199,7 @@ done
 
 # Helm nginx-ingress chart installation
 helm repo update
-helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
+helm install stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
@@ -246,7 +248,7 @@ helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPAC
 
 # Wait istio-init to complete 
 #echo "Waiting for istio-init to be in Running state..."
-#while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
+#while [ "`kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}`" != "" ]
 #do
 #  sleep 5
 #done
