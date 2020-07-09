@@ -50,7 +50,7 @@ cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update -y
-apt-get install -y --allow-change-held-packages kubeadm=1.17.6-00 kubectl=1.17.6-00 kubelet=1.17.6-00
+apt-get install -y --allow-change-held-packages kubeadm=1.17.8-00 kubectl=1.17.8-00 kubelet=1.17.8-00
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
@@ -100,7 +100,7 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #done
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.9/manifests/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.15/manifests/calico.yaml
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
