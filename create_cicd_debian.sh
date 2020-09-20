@@ -50,7 +50,7 @@ cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update -y
-apt-get install -y --allow-change-held-packages kubeadm=1.17.8-00 kubectl=1.17.8-00 kubelet=1.17.8-00
+apt-get install -y --allow-change-held-packages kubeadm=1.17.12-00 kubectl=1.17.12-00 kubelet=1.17.12-00
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
@@ -76,7 +76,8 @@ systemctl enable kubelet && systemctl restart kubelet
 sed -i 's#cgroupDriver:.*#"\#cgroupDriver: systemd"#g' /var/lib/kubelet/config.yaml
 systemctl restart kubelet
 
-docker pull coredns/coredns
+# Uncomment if k8s version doesn't install it
+#docker pull coredns/coredns
 
 export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.17.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
@@ -92,24 +93,28 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #sleep 120
 
 # CNI Calico installation
-# Wait for cluster to be in Ready, it can take a while
-#echo "Waiting for cluster to be in Ready state..."
-#while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
-#do
-#  sleep 5
-#done
+export IP_AUTODETECTION_METHOD=interface=wlo1
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.15/manifests/calico.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.3/manifests/calico.yaml
+kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
+# Wait for cluster to be in Ready, it can take a while
+echo "Waiting for cluster to be in Ready state..."
+while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
+do
+  sleep 5
+done
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
 
 # Dashboard UI installation
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
-TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
-echo "kubernetes-dashboard token: ${TOKEN}"
-kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
+#kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+#TOKEN=`kubectl -n kube-system describe secret kubernetes-dashboard | grep "token:" | awk '{print $2}'`
+#echo "kubernetes-dashboard token: ${TOKEN}"
+#kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
 # kubernetes/ingress-nginx
 #su - $USER -c git clone https://github.com/kubernetes/ingress-nginx.git
