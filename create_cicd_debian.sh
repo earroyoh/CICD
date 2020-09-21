@@ -93,12 +93,12 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #sleep 120
 
 # CNI Calico installation
-export IP_AUTODETECTION_METHOD=interface=wlo1
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-#kubectl apply -f https://docs.projectcalico.org/v3.3/manifests/calico.yaml
-kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.3/manifests/calico.yaml
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=wlo1
+#kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+#kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
 
 # Wait for cluster to be in Ready, it can take a while
 echo "Waiting for cluster to be in Ready state..."
