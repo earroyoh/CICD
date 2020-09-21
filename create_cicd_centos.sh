@@ -51,15 +51,16 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #sleep 120
 
 # CNI Calico installation
+#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.3/manifests/calico.yaml
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=wlo1
 # Wait for cluster to be in Ready, it can take a while
-#echo "Waiting for cluster to be in Ready state..."
-#while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
-#do
-#  sleep 5
-#done
-kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-#kubectl apply -f https://docs.projectcalico.org/v3.7/manifests/calico.yaml
+echo "Waiting for cluster to be in Ready state..."
+while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
+do
+  sleep 5
+done
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -136,8 +137,15 @@ subjects:
 EOF
 kubectl create -f helm-clusterrolebinding.yaml
 
-helm init --service-account tiller --tiller-namespace $NAMESPACE
+# HELM init
 export TILLER_NAMESPACE=$NAMESPACE
+# Tiller without TLS VERIFY
+#helm init --service-account tiller --tiller-namespace $NAMESPACE
+# Tiller with TLS VERIFY
+IFACE=wlo1
+EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
+./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
+helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
@@ -145,7 +153,6 @@ while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep til
 do
   sleep 5
 done
-
 
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
