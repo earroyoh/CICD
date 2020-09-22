@@ -95,8 +95,9 @@ kubeadm token create --print-join-command > kubeadm-join-command
 # CNI Calico installation
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
 #kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.3/manifests/calico.yaml
-kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=wlo1
+kubectl apply -f https://docs.projectcalico.org/v3.16/manifests/calico.yaml
+IFACE=`ip link | grep "state UP" | awk -F':' '{print $2}' | sed 's/ //g'`
+kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=$IFACE
 #kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
 #kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
 
@@ -187,7 +188,7 @@ export TILLER_NAMESPACE=$NAMESPACE
 # Tiller without TLS VERIFY
 #helm init --service-account tiller --tiller-namespace $NAMESPACE
 # Tiller with TLS VERIFY
-IFACE=wlo1
+#IFACE=wlo1
 EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
