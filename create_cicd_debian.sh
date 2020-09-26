@@ -83,9 +83,9 @@ export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.17.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
-cp /etc/kubernetes/admin.conf /home/debian/.kube/
-chown debian:debian /home/debian/.kube/admin.conf
-chmod 600 /home/debian/.kube/admin.conf
+cp /etc/kubernetes/admin.conf ~/.kube/
+chown debian:debian ~/.kube/admin.conf
+chmod 600 ~/.kube/admin.conf
 kubectl -n kube-system get cm kubeadm-config -oyaml > kubeadm-config.yaml
 kubeadm token create --print-join-command > kubeadm-join-command
 
@@ -192,6 +192,10 @@ export TILLER_NAMESPACE=$NAMESPACE
 EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
+cp helm.crt ~/.helm/cert.pem
+cp helm.key ~/.helm/key.pem
+cp ca.crt ~/.helm/ca.pem
+
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
