@@ -189,7 +189,7 @@ export TILLER_NAMESPACE=$NAMESPACE
 #helm init --service-account tiller --tiller-namespace $NAMESPACE
 # Tiller with TLS VERIFY
 #IFACE=wlo1
-EXTERNAL_IP=`ip address show $IFACE | grep "inet " | awk '{print $2}'`
+EXTERNAL_IP=`ip address show $IFACE | grep "inet " | awk '{print $2}' | awk -F'/' '{print $1}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 cp helm.crt /home/debian/.helm/cert.pem
