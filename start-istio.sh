@@ -89,18 +89,17 @@ export TILLER_NAMESPACE=$NAMESPACE
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
-while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "Running" ]
+while [ "`kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}`" != "Running" ]
 do
   sleep 5
 done
-
 
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
 
 # Helm nginx-ingress chart installation
 helm repo update
-helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
+helm install ingress-nginx/ingress-nginx --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE --tls
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
@@ -145,11 +144,11 @@ helm install stable/nginx-ingress --name $NAMESPACE --tiller-namespace $NAMESPAC
 
 # Helm istio chart installation
 git clone https://github.com/istio/istio.git
-helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE --tls
 
 # Wait istio-init to complete 
 echo "Waiting for istio-init to be in Running state..."
-while [ `kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}` != "" ]
+while [ "`kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep istio-init | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}`" != "" ]
 do
   sleep 5
 done

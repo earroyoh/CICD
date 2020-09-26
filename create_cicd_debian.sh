@@ -83,9 +83,9 @@ export NO_PROXY="localhost,127.0.0.1,10.0.0.0/8,192.168.0.0/16,172.17.0.0/16"
 kubeadm init --pod-network-cidr=192.168.0.0/16
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
-cp /etc/kubernetes/admin.conf ~/.kube/
-chown debian:debian ~/.kube/admin.conf
-chmod 600 ~/.kube/admin.conf
+cp /etc/kubernetes/admin.conf /home/debian/.kube/
+chown debian:debian /home/debian/.kube/admin.conf
+chmod 600 /home/debian/.kube/admin.conf
 kubectl -n kube-system get cm kubeadm-config -oyaml > kubeadm-config.yaml
 kubeadm token create --print-join-command > kubeadm-join-command
 
@@ -118,8 +118,8 @@ kubectl taint nodes --all node-role.kubernetes.io/master-
 #kubectl config set-credentials kubernetes-dashboard --token="${TOKEN}"
 
 # kubernetes/ingress-nginx
-#su - $USER -c git clone https://github.com/kubernetes/ingress-nginx.git
-#su - $USER kubectl apply -f ingress-nginx/deploy/static/mandatory.yaml
+#git clone https://github.com/kubernetes/ingress-nginx.git
+#kubectl apply -f ingress-nginx/deploy/static/mandatory.yaml
 
 # Create namespace
 export NAMESPACE=istio-system
@@ -189,12 +189,13 @@ export TILLER_NAMESPACE=$NAMESPACE
 #helm init --service-account tiller --tiller-namespace $NAMESPACE
 # Tiller with TLS VERIFY
 #IFACE=wlo1
-EXTERNAL_IP=`ifconfig $IFACE | grep "inet " | awk '{print $2}'`
+EXTERNAL_IP=`ip address show $IFACE | grep "inet " | awk '{print $2}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 cp helm.crt ~/.helm/cert.pem
 cp helm.key ~/.helm/key.pem
 cp ca.crt ~/.helm/ca.pem
+sudo chown $USER:$USER $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca.pem
 
 
 # Wait tiller to be in Running state, it can take a while
@@ -209,11 +210,8 @@ done
 
 # Helm nginx-ingress chart installation
 helm repo update
-<<<<<<< HEAD
-helm install stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
-=======
-helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE
->>>>>>> d3c08f7af6c052d95c534b715d93e317361226b0
+helm install stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE --tls
+helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE --tls
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
@@ -227,6 +225,7 @@ helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --
 #  --kubeconfig config \
 #  --tiller-namespace $NAMESPACE \
 #  --namespace $NAMESPACE
+#  --tls
 #kubectl get secret $NAMESPACE-gitlab-initial-root-password -ojsonpath={.data.password} | base64 --decode ; echo
 
 # Helm jupyterhub chart installation
@@ -248,17 +247,18 @@ helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --
 #  --tiller-namespace $NAMESPACE \
 #  --version 0.8.0 \
 #  --values config.yaml
+#  --tls
 
 # Helm knative chart installation
-# helm install knative/knative --namespace $NAMESPACE
+# helm install knative/knative --namespace $NAMESPACE --tls
 
 # Helm jenkins chart installation
 # helm repo update
-# helm install stable/jenkins --name jenkins --namespace $NAMESPACE
+# helm install stable/jenkins --name jenkins --namespace $NAMESPACE --tls
 
 # Helm istio chart installation
 #git clone https://github.com/istio/istio.git
-#helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE
+#helm install istio/install/kubernetes/helm/istio-init --name istio-init --namespace $NAMESPACE --tls
 
 # Wait istio-init to complete 
 #echo "Waiting for istio-init to be in Running state..."
