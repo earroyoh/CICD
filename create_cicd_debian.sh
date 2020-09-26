@@ -192,11 +192,10 @@ export TILLER_NAMESPACE=$NAMESPACE
 EXTERNAL_IP=`ip address show $IFACE | grep "inet " | awk '{print $2}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
 helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
-cp helm.crt ~/.helm/cert.pem
-cp helm.key ~/.helm/key.pem
-cp ca.crt ~/.helm/ca.pem
-sudo chown $USER:$USER $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca.pem
-
+cp helm.crt /home/debian/.helm/cert.pem
+cp helm.key /home/debian/.helm/key.pem
+cp ca.crt /home/debian/.helm/ca.pem
+sudo chown debian:debian $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca.pem
 
 # Wait tiller to be in Running state, it can take a while
 echo "Waiting for tiller to be in Running state..."
