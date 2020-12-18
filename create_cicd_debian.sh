@@ -129,7 +129,10 @@ kubectl create namespace $NAMESPACE
 # curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz | gtar xvf -
 # mv linux-amd64/helm /usr/local/bin
 # mv linux-amd64/tiller /usr/local/bin
-curl -L https://bit.ly/install-helm | bash
+#--------------
+#curl -L https://bit.ly/install-helm | bash
+#--------------
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
 # Helm tiller service account creation
 kubectl create serviceaccount tiller --namespace $NAMESPACE
