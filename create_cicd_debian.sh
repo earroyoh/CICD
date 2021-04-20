@@ -50,7 +50,7 @@ cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update -y
-apt-get install -y --allow-change-held-packages kubeadm=1.17.12-00 kubectl=1.17.12-00 kubelet=1.17.12-00
+apt-get install -y --allow-change-held-packages kubeadm=1.19.10-00 kubectl=1.19.10-00 kubelet=1.19.10-00
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
@@ -126,34 +126,10 @@ export NAMESPACE=istio-system
 kubectl create namespace $NAMESPACE
 
 # Helm installation
-# curl -L https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz | gtar xvf -
-# mv linux-amd64/helm /usr/local/bin
-# mv linux-amd64/tiller /usr/local/bin
-#--------------
-#curl -L https://bit.ly/install-helm | bash
-#--------------
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
-# Helm tiller service account creation
-kubectl create serviceaccount tiller --namespace $NAMESPACE
+# Helm service account creation
 kubectl create serviceaccount helm --namespace $NAMESPACE
-
-# Helm tiller RBAC
-cat > tiller-clusterrolebinding.yaml <<EOF
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: tiller-clusterrolebinding
-roleRef:
-  kind: ClusterRole
-  apiGroup: rbac.authorization.k8s.io
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: tiller
-    namespace: $NAMESPACE
-EOF
-kubectl create -f tiller-clusterrolebinding.yaml
 
 cat > helm-clusterrole.yaml <<EOF
 kind: ClusterRole
@@ -186,34 +162,25 @@ subjects:
 EOF
 kubectl create -f helm-clusterrolebinding.yaml
 
-# HELM init
-export TILLER_NAMESPACE=$NAMESPACE
-# Tiller without TLS VERIFY
-#helm init --service-account tiller --tiller-namespace $NAMESPACE
-# Tiller with TLS VERIFY
 #IFACE=wlo1
 EXTERNAL_IP=`ip address show $IFACE | grep "inet " | awk '{print $2}' | awk -F'/' '{print $1}'`
 ./gen_tiller_cert.sh $NAMESPACE $EXTERNAL_IP
-helm init --tiller-tls --tiller-tls-cert ./tiller.crt --tiller-tls-key ./tiller.key --tiller-tls-verify --tls-ca-cert /etc/kubernetes/pki/ca.crt --service-account tiller --tiller-namespace $TILLER_NAMESPACE
 cp helm.crt /home/debian/.helm/cert.pem
 cp helm.key /home/debian/.helm/key.pem
 cp ca.crt /home/debian/.helm/ca.pem
 sudo chown debian:debian $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca.pem
 
-# Wait tiller to be in Running state, it can take a while
-echo "Waiting for tiller to be in Running state..."
-while [ "`kubectl get -o template pod/$(kubectl get pods -n $NAMESPACE | grep tiller | awk '{print $1}') -n $NAMESPACE --template={{.status.phase}}`" != "Running" ] 
-do
-  sleep 5
-done
-
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
 
 # Helm nginx-ingress chart installation
+helm repo add stable https://charts.helm.sh/stable --force-update
 helm repo update
-helm install stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE --tls
-helm install --name nginx-ingress stable/nginx-ingress --set rbac.create=true --name $NAMESPACE --tiller-namespace $NAMESPACE --namespace $NAMESPACE --tls
+helm install nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace $NAMESPACE
+
+# Helm cert-manager chart installation
+helm repo add jetstack https://charts.jetstack.io
+helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.0
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
