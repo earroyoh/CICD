@@ -173,10 +173,10 @@ sudo chown debian:debian $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca
 # Create helm context config
 ./get_helm_token.sh $NAMESPACE
 
-# Helm nginx-ingress chart installation
-helm repo add stable https://charts.helm.sh/stable --force-update
+# Helm ingress-nginx chart installation
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
-helm install nginx-ingress stable/nginx-ingress --set rbac.create=true --namespace $NAMESPACE
+helm install ingress-nginx ingress-nginx/ingress-nginx
 
 # Helm cert-manager chart installation
 helm repo add jetstack https://charts.jetstack.io
