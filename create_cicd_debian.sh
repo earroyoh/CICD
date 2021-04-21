@@ -93,20 +93,18 @@ kubeadm token create --print-join-command > kubeadm-join-command
 #sleep 120
 
 # CNI Calico installation
-#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-#kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-kubectl apply -f https://docs.projectcalico.org/v3.16/manifests/calico.yaml
+kubectl apply -f https://docs.projectcalico.org/v3.18/manifests/calico.yaml
 IFACE=`ip link | grep "state UP" | awk -F':' '{print $2}' | sed 's/ //g'`
 kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface=$IFACE
-#kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-#kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
 
 # Wait for cluster to be in Ready, it can take a while
-echo "Waiting for cluster to be in Ready state..."
+echo "\nWaiting for cluster to be in Ready state..."
 while [ "`kubectl get nodes | tail -1 | awk '{print $2}'`" != "Ready" ]
 do
   sleep 5
 done
+echo "\n"
+kubectl get nodes
 
 # Comment out for a single node cluster to let it schedule pods
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -176,11 +174,16 @@ sudo chown debian:debian $HOME/.helm/cert.pem $HOME/.helm/key.pem $HOME/.helm/ca
 # Helm ingress-nginx chart installation
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
+echo "\nDeploying helm ingress-nginx chart..."
 helm install ingress-nginx ingress-nginx/ingress-nginx
 
 # Helm cert-manager chart installation
 helm repo add jetstack https://charts.jetstack.io
+echo "\nDeploying helm cert-manager chart..."
 helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.0
+
+echo ""
+helm list -A
 
 # Helm gitlab chart installation
 #helm repo add gitlab https://charts.gitlab.io/
