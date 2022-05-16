@@ -54,7 +54,7 @@ apt-get install -y --allow-change-held-packages kubeadm=1.23.6-00 kubectl=1.23.6
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
-apiVersion: kubelet.config.k8s.io/v1beta1
+apiVersion: kubelet.config.k8s.io/v1
 kind: KubeletConfiguration
 cgroupdriver:
     systemd
