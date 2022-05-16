@@ -50,7 +50,7 @@ cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 apt-get update -y
-apt-get install -y --allow-change-held-packages kubeadm=1.19.10-00 kubectl=1.19.10-00 kubelet=1.19.10-00
+apt-get install -y --allow-change-held-packages kubeadm=1.23.6-00 kubectl=1.23.6-00 kubelet=1.23.6-00
 apt-mark hold kubelet kubeadm kubectl
 #setenforce 0
 cat <<EOF > config_kubeadm.yaml
